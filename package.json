@@ -1,0 +1,31 @@
+{
+  "name": "swe_capstone-smart-grocery-tracker_backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "migrate": "knex migrate:latest",
+    "migrate:down": "knex migrate:down",
+    "migrate:rollback": "knex migrate:rollback",
+    "seed": "knex seed:run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nishithak212/Smart-Grocery-Tracker-backend_SoftwareEngineering_Capstone.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nishithak212/Smart-Grocery-Tracker-backend_SoftwareEngineering_Capstone/issues"
+  },
+  "homepage": "https://github.com/nishithak212/Smart-Grocery-Tracker-backend_SoftwareEngineering_Capstone#readme",
+  "description": "",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "knex": "^3.1.0",
+    "mysql2": "^3.13.0"
+  }
+}

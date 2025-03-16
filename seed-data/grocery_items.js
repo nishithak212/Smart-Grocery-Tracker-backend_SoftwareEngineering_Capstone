@@ -1,0 +1,73 @@
+export default [
+    {
+        id:1,
+        user_id:1,
+        item_name:"Apples",
+        quantity:5,
+        unit:"ct",
+        category:"Fruits",
+        status:"available",
+        threshold_qty:2,
+        threshold_alert:1,
+
+    },
+    {
+        id:2,
+        user_id:1,
+        item_name:"Eggs",
+        quantity:2,
+        unit:"ct",
+        category:"Poultry",
+        status:"low",
+        threshold_qty:2,
+        threshold_alert:1,
+
+    },
+    {
+        id:3,
+        user_id:1,
+        item_name:"Milk",
+        quantity:4,
+        unit:"ltr",
+        category:"Dairy",
+        status:"available",
+        threshold_qty:1,
+        threshold_alert:1,
+    },
+    {
+        id:4,
+        user_id:2,
+        item_name:"Apples",
+        quantity:5,
+        unit:"ct",
+        category:"Fruits",
+        status:"available",
+        threshold_qty:2,
+        threshold_alert:1,
+
+    },
+    {
+        id:5,
+        user_id:2,
+        item_name:"Eggs",
+        quantity:2,
+        unit:"ct",
+        category:"Poultry",
+        status:"low",
+        threshold_qty:2,
+        threshold_alert:1,
+
+    },
+    {
+        id:6,
+        user_id:2,
+        item_name:"Milk",
+        quantity:4,
+        unit:"ltr",
+        category:"Dairy",
+        status:"available",
+        threshold_qty:1,
+        threshold_alert:1,
+    },
+
+];
