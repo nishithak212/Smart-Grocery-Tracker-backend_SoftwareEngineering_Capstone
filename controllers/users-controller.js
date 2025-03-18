@@ -80,6 +80,12 @@ const loginUser = async (req, res) => {
         .json({ error: "Denied: Credentials do not match" });
     }
 
+    //Store user_id in session
+    req.session.user_id = user.user_id;
+
+    //log session data
+    console.log("Session after login:", req.session);
+
     return res.status(200).json({
       message: "User logged in successfully!",
     });
