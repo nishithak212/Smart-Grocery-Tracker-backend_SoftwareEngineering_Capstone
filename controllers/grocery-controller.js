@@ -29,11 +29,11 @@ const addGroceryItem = async (req, res) => {
 
     console.log("Received request body:", req.body);
 
-    // ✅ Ensure quantity is a number
+    //  Ensure quantity is a number
     quantity = quantity !== undefined ? Number(quantity) : undefined;
   //  console.log("Received quantity:", quantity, "Type:", typeof quantity);
 
-    // ✅ Check for missing fields properly
+    //  Check for missing fields properly
     const missingFields = [];
     if (item_name === undefined) missingFields.push("item_name");
     if (quantity === undefined || isNaN(quantity))
@@ -52,7 +52,7 @@ const addGroceryItem = async (req, res) => {
         });
     }
 
-    // ✅ Validate quantity rules
+    //  Validate quantity rules
     if (quantity < 0) {
       return res.status(400).json({ error: "Quantity cannot be negative" });
     }
@@ -69,7 +69,7 @@ const addGroceryItem = async (req, res) => {
         .json({ error: "'Finished' items must have quantity = 0" });
     }
 
-    // ✅ Insert into database
+    //  Insert into database
     const [id] = await knex("grocery_items").insert({
       user_id,
       item_name,
@@ -82,22 +82,10 @@ const addGroceryItem = async (req, res) => {
       threshold_alert,
     });
 
-    // ✅ Fetch the newly inserted grocery item
+    // Fetch the newly inserted grocery item
     const newItem = await knex("grocery_items").where({ id }).first();
 
-   /* return res.status(200).json({
-      id: newItem.id,
-      user_id: newItem.user_id,
-      item_name: newItem.item_name,
-      quantity: newItem.quantity,
-      unit: newItem.unit,
-      category: newItem.category,
-      status: newItem.status,
-      expiration_date: newItem.expiration_date || "N/A",
-      threshold_qty: newItem.threshold_qty,
-      threshold_alert: newItem.threshold_alert || "N/A",
-      added_at: newItem.added_at,
-    });*/
+  
 
     //Trigger Notifications
     await triggerNotification(user_id, item_name, status, quantity, unit, expiration_date, threshold_qty, threshold_alert);

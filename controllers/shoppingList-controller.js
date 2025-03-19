@@ -7,7 +7,7 @@ const knex = initKnex(configuration);
 
 const generateShoppingList = async (req,res) => {
     try {
-        const user_id = req.user_id; //Get user_id from session
+        const user_id = req.user_id; //Extract user_id from request headers (set in middleware)
 
         if(!user_id){
             return res.status(401).json({error: "Unauthorized: User not logged in"});
@@ -40,7 +40,7 @@ const generateShoppingList = async (req,res) => {
             quantity:item.quantity,
             unit:item.unit,
             status:item.status,
-            created_at: new Date().toISOString,
+            created_at: item.updated_at || new Date().toISOString(),
         }));
 
         return res.status(200).json(formattedList);
@@ -69,7 +69,7 @@ const deleteShoppingItem = async (req,res) =>{
 
         //Delete the item from the database
         await knex("grocery_items").where({id, user_id}).del();
-        return res.status(204).send();
+        return res.status(204).json({message: "Item removed from shopping list successfully"});
 
     } catch(error) {
         console.error("Error deleting shopping list item:", error.message);

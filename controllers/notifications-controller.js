@@ -19,7 +19,7 @@ const getNotifications = async (req,res) => {
 
         //If no notifications exist, return a message
         if(notifications.length===0){
-            return res.status(200).json({message:"No notifications!"})
+            return res.status(200).json({message:"No new notifications!"})
         }
 
         return res.status(200).json(notifications);
@@ -70,7 +70,7 @@ const deleteNotification = async (req,res) => {
     //Delete the notification
     await knex("alerts").where({id, user_id}).del();
 
-    return res.status(204).send();
+    return res.status(204).json({message: "Notification deleted successfully"});
     } catch(error){
         console.error("Error deleting notification:", error.message);
         return res.status(500).json({error: "Internal Server Error"});
