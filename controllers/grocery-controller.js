@@ -1,9 +1,10 @@
 import initKnex from "knex";
 import configuration from "../knexfile.js";
+import { triggerNotification } from "../helpers/notifications-helper.js";
 
 const knex = initKnex(configuration);
 
-//Add a new grocery item
+//Add a new grocery item with notification trigger
 
 const addGroceryItem = async (req, res) => {
   try {
@@ -30,7 +31,7 @@ const addGroceryItem = async (req, res) => {
 
     // ✅ Ensure quantity is a number
     quantity = quantity !== undefined ? Number(quantity) : undefined;
-    console.log("Received quantity:", quantity, "Type:", typeof quantity);
+  //  console.log("Received quantity:", quantity, "Type:", typeof quantity);
 
     // ✅ Check for missing fields properly
     const missingFields = [];
@@ -43,7 +44,7 @@ const addGroceryItem = async (req, res) => {
     if (threshold_qty === undefined) missingFields.push("threshold_qty");
 
     if (missingFields.length > 0) {
-      console.log("Missing Fields:", missingFields.join(", "));
+      //console.log("Missing Fields:", missingFields.join(", "));
       return res
         .status(400)
         .json({
@@ -84,7 +85,7 @@ const addGroceryItem = async (req, res) => {
     // ✅ Fetch the newly inserted grocery item
     const newItem = await knex("grocery_items").where({ id }).first();
 
-    return res.status(200).json({
+   /* return res.status(200).json({
       id: newItem.id,
       user_id: newItem.user_id,
       item_name: newItem.item_name,
@@ -96,7 +97,13 @@ const addGroceryItem = async (req, res) => {
       threshold_qty: newItem.threshold_qty,
       threshold_alert: newItem.threshold_alert || "N/A",
       added_at: newItem.added_at,
-    });
+    });*/
+
+    //Trigger Notifications
+    await triggerNotification(user_id, item_name, status, quantity, unit, expiration_date, threshold_qty, threshold_alert);
+
+    return res.status(200).json(newItem);
+
   } catch (error) {
     console.error("Error adding grocery item:", error.message);
     return res.status(500).json({ error: "Internal server error" });
@@ -114,7 +121,13 @@ const getGroceryItems = async (req, res) => {
         .json({ error: "Unauthorized: User is not logged in" });
     }
 
+    //Fetch grocery items
     const items = await knex("grocery_items").where({ user_id });
+
+    //If no grocery items exist, return a message
+    if(items.length === 0){
+        return res.status(200).json({message:"Your grocery list is empty. Start adding items!"});
+    }
 
     return res.status(200).json(items);
   } catch (error) {
@@ -161,6 +174,9 @@ const updateGroceryItem = async (req, res) => {
       threshold_alert,
       updated_at: knex.fn.now(),
     });
+
+    //Trigger Notifications
+    await triggerNotification(user_id, item_name, status, quantity, unit, expiration_date, threshold_qty, threshold_alert );
 
     return res
       .status(201)

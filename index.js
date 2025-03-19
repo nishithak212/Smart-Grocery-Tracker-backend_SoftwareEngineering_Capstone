@@ -5,6 +5,7 @@ import session from "express-session";
 import usersRouter from "./routes/users.js";
 import groceryItemsRouter from "./routes/groceryItems.js";
 import shoppingListRouter from "./routes/shoppingList-routes.js";
+import notificationsRouter from "./routes/notifications-routes.js";
 
 // import groceryItemsRouter from "./routes/groceryItems.js";
 
@@ -32,6 +33,7 @@ app.get("/", (_req, res) => {
 app.use("/api/users", usersRouter); //Register user routes
 app.use("/api/grocery", groceryItemsRouter);
 app.use("/api/shopping-list",shoppingListRouter);
+app.use("/api/notifications",notificationsRouter);
 
 app.listen(PORT, () => {
   console.log(`server started at http://localhost:${PORT}`);
