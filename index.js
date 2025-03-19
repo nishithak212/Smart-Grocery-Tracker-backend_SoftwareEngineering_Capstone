@@ -4,6 +4,7 @@ import cors from "cors";
 import session from "express-session";
 import usersRouter from "./routes/users.js";
 import groceryItemsRouter from "./routes/groceryItems.js";
+import shoppingListRouter from "./routes/shoppingList-routes.js";
 
 // import groceryItemsRouter from "./routes/groceryItems.js";
 
@@ -14,7 +15,7 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN;
 //Configure session middleware
 app.use(
   session({
-    secret:"tester123",
+    secret:process.env.SESSION_SECRET || "defaultsecret",
     resave:false,
     saveUninitialized:false,
     cookie:{secure:false, httpOnly: true, maxAge: 24 * 60 * 60* 1000}, //24 hr expiry
@@ -30,6 +31,7 @@ app.get("/", (_req, res) => {
 
 app.use("/api/users", usersRouter); //Register user routes
 app.use("/api/grocery", groceryItemsRouter);
+app.use("/api/shopping-list",shoppingListRouter);
 
 app.listen(PORT, () => {
   console.log(`server started at http://localhost:${PORT}`);
