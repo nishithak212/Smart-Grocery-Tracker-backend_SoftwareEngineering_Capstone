@@ -1,6 +1,6 @@
 import initKnex from "knex";
 import configuration from "../knexfile.js";
-import { triggerNotification } from "../helpers/notifications-helper.js";
+// import { triggerNotification } from "../helpers/notifications-helper.js";
 
 const knex = initKnex(configuration);
 
@@ -88,7 +88,7 @@ const addGroceryItem = async (req, res) => {
   
 
     //Trigger Notifications
-    await triggerNotification(user_id, item_name, status, quantity, unit, expiration_date, threshold_qty, threshold_alert);
+    //await triggerNotification(user_id, item_name, status, quantity, unit, expiration_date, threshold_qty, threshold_alert);
 
     return res.status(200).json(newItem);
 
@@ -163,9 +163,9 @@ const updateGroceryItem = async (req, res) => {
       updated_at: knex.fn.now(),
     });
 
-    //Trigger Notifications
-    await triggerNotification(user_id, item_name, status, quantity, unit, expiration_date, threshold_qty, threshold_alert );
-    console.log(`Notification checked for ${item_name}`);
+    // //Trigger Notifications
+    // await triggerNotification(user_id, item_name, status, quantity, unit, expiration_date, threshold_qty, threshold_alert );
+    // console.log(`Notification checked for ${item_name}`);
 
     return res
       .status(201)
