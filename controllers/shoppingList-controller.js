@@ -5,9 +5,17 @@ const knex = initKnex(configuration);
 
 //Generate a shopping list for finished, low and expired items
 
+const extractUserID = (req) => {
+    const authHeader = req.headers["authorization"];
+    if(!authHeader || !authHeader.startsWith("Bearer ")) {
+        return null;
+    }
+
+    return authHeader.split(" ")[1];
+};
 const generateShoppingList = async (req,res) => {
     try {
-        const user_id = req.user_id; //Extract user_id from request headers (set in middleware)
+        const user_id = extractUserID(req); //Extract user_id from request headers (set in middleware)
 
         if(!user_id){
             return res.status(401).json({error: "Unauthorized: User not logged in"});
@@ -54,7 +62,7 @@ const generateShoppingList = async (req,res) => {
 const deleteShoppingItem = async (req,res) =>{
 
     try {
-        const user_id = req.user_id;
+        const user_id = extractUserID(req);
         const{id} = req.params;
 
         if(!user_id) {
