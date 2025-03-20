@@ -165,6 +165,7 @@ const updateGroceryItem = async (req, res) => {
 
     //Trigger Notifications
     await triggerNotification(user_id, item_name, status, quantity, unit, expiration_date, threshold_qty, threshold_alert );
+    console.log(`Notification checked for ${item_name}`);
 
     return res
       .status(201)

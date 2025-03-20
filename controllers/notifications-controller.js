@@ -14,6 +14,8 @@ const getNotifications = async (req,res) => {
             .status(401)
             .json({ error: "Unauthorized: User is not logged in" });
         }
+
+        console.log(`Checking notification for user ${user_id}`);
 //Fetch notifications
         const notifications = await knex("alerts").where({user_id, is_read:false}).orderBy("alert_date", "desc");
 
@@ -22,6 +24,7 @@ const getNotifications = async (req,res) => {
             return res.status(200).json({message:"No new notifications!"})
         }
 
+        console.log(`Found ${notifications.length} notifications`);
         return res.status(200).json(notifications);
     } catch(error){
         console.error("Error fetching notifications:", error.message);

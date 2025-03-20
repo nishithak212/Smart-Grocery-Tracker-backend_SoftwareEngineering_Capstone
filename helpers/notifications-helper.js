@@ -1,52 +1,76 @@
-import initknex from "knex";
+import initKnex from "knex";
 import configuration from "../knexfile.js";
 
-const knex = initknex(configuration);
+const knex = initKnex(configuration);
 
-//Function to trigger notifications
-export const triggerNotification = async (user_id, item_name, status, quantity, unit, expiration_date, threshold_qty, threshold_alert) =>{
-    try {
-        const today = new Date();
-        today.setHours(0,0,0,0);
+// Function to trigger notifications
+export const triggerNotification = async (
+  user_id,
+  item_name,
+  status,
+  quantity,
+  unit,
+  expiration_date,
+  threshold_qty,
+  threshold_alert
+) => {
+  try {
+    const today = new Date(); // Current date
+    const expiryDate = expiration_date ? new Date(expiration_date) : null;
+    const alertDate = threshold_alert ? new Date(threshold_alert) : null;
 
-        let message = null;
+    
+    today.setHours(0, 0, 0, 0);
+    if (expiryDate) expiryDate.setHours(0, 0, 0, 0);
+    if (alertDate) alertDate.setHours(0, 0, 0, 0);
 
-        //Low Stock Alert
+    let notifications = [];
 
-        if(quantity !== undefined && quantity <= threshold_qty ) {
-            message = `${item_name} is running low. Only ${quantity}${unit} left!`;
-        }
-
-        //Finished Alert
-        if(status=== "finished"){
-            message =`${item_name} is finished. Time to restock!`;
-        }
-
-        //Close to Expiry Alert
-        if(expiration_date && threshold_alert) {
-            const expiryDate = new Date(expiration_date);
-            const alertDate = new Date(expiryDate);
-            alertDate.setDate(alertDate.getDate()-threshold_alert); //subtract threshold days
-
-            if(today >= alertDate && today < expiryDate){
-                message = `${item_name} is close to expiry on ${expiration_date}. Consider using it soon!`;
-            }
-        }
-
-        //Expired Item Alert
-        if(expiration_date) {
-            const expiryDate = new Date(expiration_date);
-            if(today > expiryDate){
-                message = `${item_name} has expired on ${expiration_date}. Please discard!`;
-            }
-        }
-
-        //Save notification to alerts table if a message is generated
-        if(message) {
-            await knex("alerts").insert({user_id, status, message});
-        }
+    // Trigger notification if item is expired
+    if (expiryDate && expiryDate < today) {
+      notifications.push({
+        user_id,
+        item_name,
+        message: `Alert! ${item_name} has expired.`,
+        is_read: false,
+      });
     }
-        catch(error){
-console.error("Error triggering notification:", error.message);
-        }
-    };
+
+    // Trigger notification if item is low
+    if (quantity <= threshold_qty) {
+      notifications.push({
+        user_id,
+        item_name,
+        message: `Alert! ${item_name} is running low (${quantity} ${unit} left).`,
+        is_read: false,
+      });
+    }
+
+    // Trigger notification if item is finished
+    if (status === "finished") {
+      notifications.push({
+        user_id,
+        item_name,
+        message: `Reminder: ${item_name} is finished. Please restock!`,
+        is_read: false,
+      });
+    }
+
+    //Trigger notification if item is near expiry
+    if (alertDate && today >= alertDate) {
+      notifications.push({
+        user_id,
+        item_name,
+        message: `Heads up! ${item_name} will expire soon (Exp: ${expiration_date}).`,
+        is_read: false,
+      });
+    }
+
+    // Insert notifications into database
+    if (notifications.length > 0) {
+      await knex("alerts").insert(notifications);
+    }
+  } catch (error) {
+    console.error("Error triggering notifications:", error.message);
+  }
+};
