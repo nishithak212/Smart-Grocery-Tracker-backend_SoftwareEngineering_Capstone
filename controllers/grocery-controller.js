@@ -31,7 +31,20 @@ const addGroceryItem = async (req, res) => {
 
     //  Ensure quantity is a number
     quantity = quantity !== undefined ? Number(quantity) : undefined;
-  //  console.log("Received quantity:", quantity, "Type:", typeof quantity);
+    threshold_qty =
+      threshold_qty !== undefined ? Number(threshold_qty) : undefined;
+    //  console.log("Received quantity:", quantity, "Type:", typeof quantity);
+
+    //Dynamically set the status of an item to low
+    if (quantity <= threshold_qty) {
+      status = "low";
+    }
+
+    // Convert empty strings to NULL for optional date fields
+    expiration_date =
+      expiration_date && expiration_date.trim() !== "" ? expiration_date : null;
+    threshold_alert =
+      threshold_alert && threshold_alert.trim() !== "" ? threshold_alert : null;
 
     //  Check for missing fields properly
     const missingFields = [];
@@ -40,16 +53,14 @@ const addGroceryItem = async (req, res) => {
       missingFields.push("quantity");
     if (unit === undefined) missingFields.push("unit");
     if (category === undefined) missingFields.push("category");
-    if (status === undefined) missingFields.push("status");
+    //  if (status === undefined) missingFields.push("status");
     if (threshold_qty === undefined) missingFields.push("threshold_qty");
 
     if (missingFields.length > 0) {
       //console.log("Missing Fields:", missingFields.join(", "));
-      return res
-        .status(400)
-        .json({
-          error: `Missing required fields: ${missingFields.join(", ")}`,
-        });
+      return res.status(400).json({
+        error: `Missing required fields: ${missingFields.join(", ")}`,
+      });
     }
 
     //  Validate quantity rules
@@ -69,6 +80,17 @@ const addGroceryItem = async (req, res) => {
         .json({ error: "'Finished' items must have quantity = 0" });
     }
 
+    let computedStatus = "available";
+
+    const today = new Date();
+    const expiryDate = expiration_date ? new Date(expiration_date) : null;
+    if (quantity === 0) {
+      computedStatus = "finished";
+    } else if (expiryDate && expiryDate < today) {
+      computedStatus = "expired";
+    } else if (quantity <= threshold_qty) {
+      computedStatus = "low";
+    }
     //  Insert into database
     const [id] = await knex("grocery_items").insert({
       user_id,
@@ -76,22 +98,16 @@ const addGroceryItem = async (req, res) => {
       quantity,
       unit,
       category,
-      status,
-      expiration_date,
+      status: computedStatus,
+      expiration_date: expiration_date || null,
       threshold_qty,
-      threshold_alert,
+      threshold_alert: threshold_alert || null,
     });
 
     // Fetch the newly inserted grocery item
     const newItem = await knex("grocery_items").where({ id }).first();
 
-  
-
-    //Trigger Notifications
-    //await triggerNotification(user_id, item_name, status, quantity, unit, expiration_date, threshold_qty, threshold_alert);
-
     return res.status(200).json(newItem);
-
   } catch (error) {
     console.error("Error adding grocery item:", error.message);
     return res.status(500).json({ error: "Internal server error" });
@@ -113,8 +129,10 @@ const getGroceryItems = async (req, res) => {
     const items = await knex("grocery_items").where({ user_id });
 
     //If no grocery items exist, return a message
-    if(items.length === 0){
-        return res.status(200).json({message:"Your grocery list is empty. Start adding items!"});
+    if (items.length === 0) {
+      return res
+        .status(200)
+        .json({ message: "Your grocery list is empty. Start adding items!" });
     }
 
     return res.status(200).json(items);
@@ -129,7 +147,7 @@ const updateGroceryItem = async (req, res) => {
   try {
     const user_id = req.user_id;
     const { id } = req.params;
-    const {
+    let {
       item_name,
       quantity,
       unit,
@@ -139,6 +157,11 @@ const updateGroceryItem = async (req, res) => {
       threshold_qty,
       threshold_alert,
     } = req.body;
+    // Convert empty strings to NULL for optional date fields
+    expiration_date =
+      expiration_date && expiration_date.trim() !== "" ? expiration_date : null;
+    threshold_alert =
+      threshold_alert && threshold_alert.trim() !== "" ? threshold_alert : null;
 
     if (!user_id) {
       return res
@@ -151,17 +174,36 @@ const updateGroceryItem = async (req, res) => {
       return res.status(404).json({ error: "Grocery item not found" });
     }
 
-    await knex("grocery_items").where({ id, user_id }).update({
-      item_name,
-      quantity,
-      unit,
-      category,
-      status,
-      expiration_date,
-      threshold_qty,
-      threshold_alert,
-      updated_at: knex.fn.now(),
-    });
+    quantity = quantity !== undefined ? Number(quantity) : undefined;
+    threshold_qty =
+      threshold_qty !== undefined ? Number(threshold_qty) : undefined;
+
+    let computedStatus = "available";
+
+    const today = new Date();
+    const expiryDate = expiration_date ? new Date(expiration_date) : null;
+
+    if (quantity === 0) {
+      computedStatus = "finished";
+    } else if (expiryDate && expiryDate < today) {
+      computedStatus = "expired";
+    } else if (quantity <= threshold_qty) {
+      computedStatus = "low";
+    }
+
+    await knex("grocery_items")
+      .where({ id, user_id })
+      .update({
+        item_name,
+        quantity,
+        unit,
+        category,
+        status: computedStatus,
+        expiration_date: expiration_date || null,
+        threshold_qty,
+        threshold_alert: threshold_alert || null,
+        updated_at: knex.fn.now(),
+      });
 
     // //Trigger Notifications
     // await triggerNotification(user_id, item_name, status, quantity, unit, expiration_date, threshold_qty, threshold_alert );

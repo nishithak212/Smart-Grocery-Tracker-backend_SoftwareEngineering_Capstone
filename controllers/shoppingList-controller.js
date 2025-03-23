@@ -35,7 +35,15 @@ const generateShoppingList = async (req, res) => {
           .orWhere("status", "expired")
           .orWhere("status", "low");
       })
-      .select("id", "user_id", "item_name", "quantity", "unit", "status")
+      .select(
+        "id",
+        "user_id",
+        "item_name",
+        "quantity",
+        "unit",
+        "category",
+        "status"
+      )
       .orderBy("status", "asc");
 
     console.log("Shopping list API response:", shoppingList);
@@ -55,6 +63,7 @@ const generateShoppingList = async (req, res) => {
       quantity: item.quantity,
       unit: item.unit,
       status: item.status,
+      category: item.category,
       created_at: item.updated_at || new Date().toISOString(),
     }));
 

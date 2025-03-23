@@ -4,12 +4,16 @@ import configuration from "../knexfile.js";
 
 const knex = initKnex(configuration);
 
-// Function to check grocery items and trigger notifications, update shopping list
 const checkGroceryItems = async () => {
   try {
-    console.log("Running GroceryGenie Cron Job...");
+    const now = new Date();
+    const formattedDisplayDate = `${String(now.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}/${String(now.getDate()).padStart(2, "0")}/${now.getFullYear()}`;
+    const currentDateForDB = now.toISOString().split("T")[0]; // "YYYY-MM-DD"
 
-    const currentDate = new Date().toISOString().split("T")[0];
+    console.log(`Running GroceryGenie Cron Job on ${formattedDisplayDate}...`);
 
     // Fetch items that should be in the shopping list
     const shoppingListItems = await knex("grocery_items")
@@ -20,21 +24,24 @@ const checkGroceryItems = async () => {
         "quantity",
         "status",
         "expiration_date",
-        "threshold_alert"
+        "threshold_alert",
+        "threshold_qty"
       )
       .where(function () {
-        this.where("status", "low")
-          .orWhere("status", "finished")
+        this.where("status", "finished")
           .orWhere("status", "expired")
-          .orWhereRaw("DATE(threshold_alert) = ?", [currentDate]) // Trigger alert when threshold date arrives
-          .orWhereRaw("DATE(expiration_date) < ?", [currentDate]); // Check if item is expired
+          .orWhereRaw("DATE(threshold_alert) = ?", [currentDateForDB])
+          .orWhereRaw("DATE(expiration_date) < ?", [currentDateForDB]);
       });
 
     if (shoppingListItems.length > 0) {
       console.log("Updating Shopping List with these items:");
       shoppingListItems.forEach((item) => {
+        const expDate = item.expiration_date
+          ? new Date(item.expiration_date).toLocaleDateString("en-US")
+          : "N/A";
         console.log(
-          `- ${item.item_name} (Status: ${item.status}, Expiry: ${item.expiration_date})`
+          `- ${item.item_name} (Status: ${item.status}, Exp: ${expDate})`
         );
       });
     } else {
@@ -46,30 +53,49 @@ const checkGroceryItems = async () => {
         id,
         user_id,
         item_name,
+        quantity,
         status,
+        threshold_qty,
         expiration_date,
         threshold_alert,
       } = item;
+
       let alertMessage = "";
 
-      // Notification messages
-      if (status === "low") {
-        alertMessage = `${item_name} is running low. Restock soon!`;
-      } else if (status === "finished") {
+      // Calculate status dynamically
+      const isExpired =
+        expiration_date &&
+        new Date(expiration_date).toISOString().split("T")[0] <
+          currentDateForDB;
+
+      const isExpiringSoon =
+        threshold_alert &&
+        new Date(threshold_alert).toISOString().split("T")[0] ===
+          currentDateForDB;
+
+      if (quantity === 0) {
         alertMessage = `${item_name} is finished.`;
-      } else if (status === "expired") {
-        alertMessage = ` ${item_name} has expired. Please discard it!`;
-      } else if (threshold_alert === currentDate) {
-        alertMessage = `${item_name} will expire soon on ${expiration_date}.`;
+        await knex("grocery_items")
+          .where({ id })
+          .update({ status: "finished" });
+      } else if (isExpired) {
+        alertMessage = `${item_name} has expired. Please discard it!`;
+        await knex("grocery_items").where({ id }).update({ status: "expired" });
+      } else if (quantity <= threshold_qty) {
+        alertMessage = `${item_name} is running low. Restock soon!`;
+        await knex("grocery_items").where({ id }).update({ status: "low" });
+      } else if (isExpiringSoon) {
+        alertMessage = `${item_name} will expire soon on ${new Date(
+          expiration_date
+        ).toLocaleDateString("en-US")}.`;
       }
 
-      // Avoid duplicate notifications and ignore notifications marked as read
+      // Avoid duplicate unread notifications
       const existingNotification = await knex("alerts")
         .where({ user_id, item_name, message: alertMessage })
-        .andWhere("is_read", 0)
         .first();
 
-      if (!existingNotification) {
+      if (!existingNotification && alertMessage) {
         await knex("alerts").insert({
           user_id,
           item_name,
@@ -83,14 +109,14 @@ const checkGroceryItems = async () => {
       }
     }
 
-    console.log("GroceryGenie Scheduler completed.");
+    console.log("GroceryGenie Scheduler completed.\n");
   } catch (error) {
-    console.error(" Error in GroceryGenie Cron Job:", error.message);
+    console.error("Error in GroceryGenie Cron Job:", error.message);
   }
 };
 
-// cron job every 2 minutes for testing
+// Run every 1 minute (for testing)
 export const scheduler = () => {
-  cron.schedule("*/2 * * * *", checkGroceryItems);
+  cron.schedule("*/1 * * * *", checkGroceryItems);
   console.log("GroceryGenie Scheduler is running...");
 };

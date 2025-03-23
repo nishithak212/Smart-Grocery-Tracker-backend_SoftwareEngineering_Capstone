@@ -20,7 +20,7 @@ const registerUser = async (req, res) => {
     if (existingUser) {
       return res
         .status(409)
-        .json({ error: "Username alreay exists. Please use a different one" });
+        .json({ error: "Username already exists. Please use a different one" });
     }
 
     //Hash password before saving to the database
@@ -80,16 +80,12 @@ const loginUser = async (req, res) => {
         .json({ error: "Denied: Credentials do not match" });
     }
 
-    
-
     //Return user_id in response
     return res.status(200).json({
-      message:"User logged in successfully",
-      user_id:user.user_id //Send 'user_id' to frontend
+      message: "User logged in successfully",
+      user_id: user.user_id, //Send 'user_id' to frontend
+      username:user.username,
     });
-
-    
-
   } catch (error) {
     console.error("Login error", error.message);
     res
