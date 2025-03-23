@@ -1,10 +1,10 @@
 import initKnex from "knex";
 import configuration from "../knexfile.js";
-// import { triggerNotification } from "../helpers/notifications-helper.js";
+import determineStatus from "../helper/computedStatus-helper.js";
 
 const knex = initKnex(configuration);
 
-//Add a new grocery item with notification trigger
+//Add a new grocery
 
 const addGroceryItem = async (req, res) => {
   try {
@@ -33,7 +33,6 @@ const addGroceryItem = async (req, res) => {
     quantity = quantity !== undefined ? Number(quantity) : undefined;
     threshold_qty =
       threshold_qty !== undefined ? Number(threshold_qty) : undefined;
-    //  console.log("Received quantity:", quantity, "Type:", typeof quantity);
 
     //Dynamically set the status of an item to low
     if (quantity <= threshold_qty) {
@@ -53,44 +52,20 @@ const addGroceryItem = async (req, res) => {
       missingFields.push("quantity");
     if (unit === undefined) missingFields.push("unit");
     if (category === undefined) missingFields.push("category");
-    //  if (status === undefined) missingFields.push("status");
     if (threshold_qty === undefined) missingFields.push("threshold_qty");
 
     if (missingFields.length > 0) {
-      //console.log("Missing Fields:", missingFields.join(", "));
       return res.status(400).json({
         error: `Missing required fields: ${missingFields.join(", ")}`,
       });
     }
 
-    //  Validate quantity rules
-    if (quantity < 0) {
-      return res.status(400).json({ error: "Quantity cannot be negative" });
-    }
+    const computedStatus = determineStatus(
+      quantity,
+      threshold_qty,
+      expiration_date
+    );
 
-    if (quantity === 0 && status !== "out of stock") {
-      return res
-        .status(400)
-        .json({ error: "Only out-of-stock items can have quantity = 0" });
-    }
-
-    if (status === "out of stock" && quantity > 0) {
-      return res
-        .status(400)
-        .json({ error: "'Out-of-stock' items must have quantity = 0" });
-    }
-
-    let computedStatus = "available";
-
-    const today = new Date();
-    const expiryDate = expiration_date ? new Date(expiration_date) : null;
-    if (quantity === 0) {
-      computedStatus = "out of stock";
-    } else if (expiryDate && expiryDate < today) {
-      computedStatus = "expired";
-    } else if (quantity <= threshold_qty) {
-      computedStatus = "low";
-    }
     //  Insert into database
     const [id] = await knex("grocery_items").insert({
       user_id,
@@ -178,18 +153,11 @@ const updateGroceryItem = async (req, res) => {
     threshold_qty =
       threshold_qty !== undefined ? Number(threshold_qty) : undefined;
 
-    let computedStatus = "available";
-
-    const today = new Date();
-    const expiryDate = expiration_date ? new Date(expiration_date) : null;
-
-    if (quantity === 0) {
-      computedStatus = "out of stock";
-    } else if (expiryDate && expiryDate < today) {
-      computedStatus = "expired";
-    } else if (quantity <= threshold_qty) {
-      computedStatus = "low";
-    }
+    const computedStatus = determineStatus(
+      quantity,
+      threshold_qty,
+      expiration_date
+    );
 
     await knex("grocery_items")
       .where({ id, user_id })
@@ -204,10 +172,6 @@ const updateGroceryItem = async (req, res) => {
         threshold_alert: threshold_alert || null,
         updated_at: knex.fn.now(),
       });
-
-    // //Trigger Notifications
-    // await triggerNotification(user_id, item_name, status, quantity, unit, expiration_date, threshold_qty, threshold_alert );
-    // console.log(`Notification checked for ${item_name}`);
 
     return res
       .status(201)

@@ -69,8 +69,6 @@ const loginUser = async (req, res) => {
     if (!user) {
       return res.status(401).json({ error: "Denied: User is not registered" });
     }
-    // console.log("Stored Hash:", user.password);
-    //         console.log("Entered Password:", password);
 
     //Compare passwords
     const isMatch = await bcrypt.compare(password, user.password);
@@ -84,7 +82,7 @@ const loginUser = async (req, res) => {
     return res.status(200).json({
       message: "User logged in successfully",
       user_id: user.user_id, //Send 'user_id' to frontend
-      username:user.username,
+      username: user.username,
     });
   } catch (error) {
     console.error("Login error", error.message);

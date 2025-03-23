@@ -50,8 +50,7 @@ const generateShoppingList = async (req, res) => {
 
     //Check if list is empty
     if (shoppingList.length === 0) {
-      return res.status(200)
-      .json({
+      return res.status(200).json({
         message:
           "Your shopping list is empty! No low stock, expired or out of stock items.",
       });

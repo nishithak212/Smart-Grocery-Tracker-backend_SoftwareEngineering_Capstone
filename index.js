@@ -1,7 +1,6 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import session from "express-session";
 import usersRouter from "./routes/users.js";
 import groceryItemsRouter from "./routes/groceryItems.js";
 import shoppingListRouter from "./routes/shoppingList-routes.js";
@@ -26,26 +25,6 @@ app.use(
 
 //Middleware to parse JSON requests
 app.use(express.json());
-
-//Configure session middleware
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "defaultsecret",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: false,
-      httpOnly: true,
-      sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000,
-    }, //24 hr validity
-  })
-);
-
-app.use((req, res, next) => {
-  console.log("Session Data:", req.session);
-  next();
-});
 
 // basic home route
 app.get("/", (_req, res) => {
