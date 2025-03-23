@@ -68,16 +68,16 @@ const addGroceryItem = async (req, res) => {
       return res.status(400).json({ error: "Quantity cannot be negative" });
     }
 
-    if (quantity === 0 && status !== "finished") {
+    if (quantity === 0 && status !== "out of stock") {
       return res
         .status(400)
-        .json({ error: "Only 'finished' items can have quantity = 0" });
+        .json({ error: "Only out-of-stock items can have quantity = 0" });
     }
 
-    if (status === "finished" && quantity > 0) {
+    if (status === "out of stock" && quantity > 0) {
       return res
         .status(400)
-        .json({ error: "'Finished' items must have quantity = 0" });
+        .json({ error: "'Out-of-stock' items must have quantity = 0" });
     }
 
     let computedStatus = "available";
@@ -85,7 +85,7 @@ const addGroceryItem = async (req, res) => {
     const today = new Date();
     const expiryDate = expiration_date ? new Date(expiration_date) : null;
     if (quantity === 0) {
-      computedStatus = "finished";
+      computedStatus = "out of stock";
     } else if (expiryDate && expiryDate < today) {
       computedStatus = "expired";
     } else if (quantity <= threshold_qty) {
@@ -184,7 +184,7 @@ const updateGroceryItem = async (req, res) => {
     const expiryDate = expiration_date ? new Date(expiration_date) : null;
 
     if (quantity === 0) {
-      computedStatus = "finished";
+      computedStatus = "out of stock";
     } else if (expiryDate && expiryDate < today) {
       computedStatus = "expired";
     } else if (quantity <= threshold_qty) {

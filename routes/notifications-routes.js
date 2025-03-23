@@ -13,5 +13,9 @@ router
 router
   .route("/mark-read/:id")
   .put(authenticateUser, notificationsController.markNotificationsAsRead);
+ 
+  router
+  .route("/mark-all-read")
+  .put(authenticateUser, notificationsController.markAllAsRead);
 
 export default router;

@@ -76,4 +76,24 @@ const markNotificationsAsRead = async (req, res) => {
   }
 };
 
-export { getNotifications, markNotificationsAsRead };
+const markAllAsRead = async(req,res) => {
+    const user_id = extractUserID(req);
+try{
+    if (!user_id) {
+      return res
+        .status(401)
+        .json({ error: "Unauthorized: User is not logged in" });
+    }
+
+    await knex("alerts")
+    .where({user_id, is_read: 0})
+    .update({is_read:1});
+
+    res.status(200).json({message: "All notifications marked as read"});
+} catch (error) {
+    console.error("Error marking all notifications as read:", error.message);
+    res.status(500).json({error:"Internal server error"});
+}
+};
+
+export { getNotifications, markNotificationsAsRead, markAllAsRead };

@@ -28,7 +28,7 @@ const checkGroceryItems = async () => {
         "threshold_qty"
       )
       .where(function () {
-        this.where("status", "finished")
+        this.where("status", "out of stock")
           .orWhere("status", "expired")
           .orWhereRaw("DATE(threshold_alert) = ?", [currentDateForDB])
           .orWhereRaw("DATE(expiration_date) < ?", [currentDateForDB]);
@@ -74,18 +74,18 @@ const checkGroceryItems = async () => {
           currentDateForDB;
 
       if (quantity === 0) {
-        alertMessage = `${item_name} is finished.`;
+        alertMessage = `${item_name} : Out-of-Stock`;
         await knex("grocery_items")
           .where({ id })
-          .update({ status: "finished" });
+          .update({ status: "out of stock" });
       } else if (isExpired) {
-        alertMessage = `${item_name} has expired. Please discard it!`;
+        alertMessage = `${item_name} : Expired. Please discard!`;
         await knex("grocery_items").where({ id }).update({ status: "expired" });
       } else if (quantity <= threshold_qty) {
-        alertMessage = `${item_name} is running low. Restock soon!`;
+        alertMessage = `${item_name} : Running low. Restock soon!`;
         await knex("grocery_items").where({ id }).update({ status: "low" });
       } else if (isExpiringSoon) {
-        alertMessage = `${item_name} will expire soon on ${new Date(
+        alertMessage = `${item_name}: Expiring soon on- ${new Date(
           expiration_date
         ).toLocaleDateString("en-US")}.`;
       }

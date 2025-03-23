@@ -12,7 +12,7 @@ const extractUserID = (req) => {
   return authHeader.split(" ")[1];
 };
 
-//Generate a shopping list for finished, low and expired items
+//Generate a shopping list for out of stock, low and expired items
 const generateShoppingList = async (req, res) => {
   try {
     const user_id = extractUserID(req); //Extract user_id from request headers (set in middleware)
@@ -25,12 +25,12 @@ const generateShoppingList = async (req, res) => {
 
     console.log(`Fetching shopping list for user_id: ${user_id}`);
 
-    //Fetch grocery items that are either finished, low on stock or expired
+    //Fetch grocery items that are either out of stock, low on stock or expired
     const shoppingList = await knex("grocery_items")
       .where({ user_id })
       .andWhere(function () {
         this.where(function () {
-          this.where("status", "finished").andWhere("quantity", 0);
+          this.where("status", "out of stock").andWhere("quantity", 0);
         })
           .orWhere("status", "expired")
           .orWhere("status", "low");
@@ -50,9 +50,10 @@ const generateShoppingList = async (req, res) => {
 
     //Check if list is empty
     if (shoppingList.length === 0) {
-      return res.status(200).json({
+      return res.status(200)
+      .json({
         message:
-          "Your shopping list is empty! No low stock, expired or finished items.",
+          "Your shopping list is empty! No low stock, expired or out of stock items.",
       });
     }
     //Format response
